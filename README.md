@@ -24,8 +24,8 @@ This web application allows you to leverage the power of Google's Gemini models 
 4.  **Set up Gemini API Key:**
     You need a Google Gemini API key to use this application. You can obtain one from [Google AI Studio](https://makersuite.google.com/app/apikey).
 
-    To setup your gemini api key:
-        *   **First Run** Simply enter your api key in the info box when first visting the page, it will then create a .gemini_api_key file containing your key.
+    **To setup your gemini api key:**
+    Simply enter your api key in the info box when first visting the page, it will then create a .gemini_api_key file containing your key.
 
 ## Running the Application
 
