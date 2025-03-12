@@ -12,10 +12,9 @@ This web application allows you to leverage the power of Google's Gemini models 
 
 2.  **Clone the repository:**
     ```bash
-    git clone <repository_url>
-    cd <repository_directory>
+    git clone https://github.com/PooSmacker/GeminiChat.git
+    cd GeminiChat
     ```
-    *(Replace `<repository_url>` and `<repository_directory>` with your actual repository details)*
 
 3.  **Install Dependencies:**
     ```bash
