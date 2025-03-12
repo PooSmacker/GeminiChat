@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Web API</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <style>
+        :root {
+            --primary-bg: #1e1e2e;
+            --secondary-bg: #282838;
+            --accent-color: #7f5af0;
+            --text-color: #fffffe;
+            --muted-text: #94a1b2;
+            --border-color: #3d3d50;
+            --success-color: #2cb67d;
+            --danger-color: #ef4565;
+            --sidebar-width: 300px;
+            --prompt-height: 100px;
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .main-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--secondary-bg);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+            padding: 1.5rem;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+
+        .content-wrapper {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            padding-bottom: calc(var(--prompt-height) + 2rem);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #prompt-container {
+            position: fixed;
+            bottom: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            background-color: var(--secondary-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 1rem;
+            z-index: 1000;
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+            height: var(--prompt-height);
+        }
+
+        .card {
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.15s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background-color: rgba(127, 90, 240, 0.1);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem;
+            font-weight: 600;
+        }
+
+        .file-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            margin-bottom: 0.25rem;
+            transition: background-color 0.15s ease;
+        }
+
+        .file-item:hover {
+            background-color: rgba(127, 90, 240, 0.1);
+        }
+
+        .file-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 0.5rem;
+        }
+
+        .btn {
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #6b4fd1;
+            border-color: #6b4fd1;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background-color: #25a06e;
+            border-color: #25a06e;
+        }
+
+        .form-control {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            color: var(--text-color);
+            padding: 0.75rem;
+        }
+
+        .form-control:focus {
+            background-color: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(127, 90, 240, 0.25);
+        }
+
+        .response-panel {
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            background-color: var(--secondary-bg);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .response-panel h4 {
+            color: var(--success-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .response-panel h4 i {
+            font-size: 1.2em;
+        }
+
+        pre {
+            background-color: #282a36;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.2);
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'Fira Code', 'Operator Mono', 'Droid Sans Mono', 'Courier New', monospace;
+        }
+
+        .code-wrapper {
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            cursor: pointer;
+            background-color: rgba(127, 90, 240, 0.7);
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .copy-button:hover {
+            background-color: var(--accent-color);
+        }
+
+        .directory-path {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .directory-path i {
+            margin-right: 0.5rem;
+            color: var(--accent-color);
+        }
+
+        .directory-path span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: monospace;
+        }
+
+        .badge {
+            background-color: var(--accent-color);
+            font-weight: 500;
+            font-size: 0.8rem;
+            padding: 0.35em 0.65em;
+            border-radius: 0.375rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+
+        .loading .spinner-border {
+            color: var(--accent-color);
+            width: 2rem;
+            height: 2rem;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--primary-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .app-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+
+        .app-header i {
+            font-size: 1.5rem;
+            margin-right: 0.75rem;
+            color: var(--accent-color);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--muted-text);
+            margin: auto;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        #response-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #response-container .response-panel:last-child {
+            margin-bottom: 0;
+        }
+
+        #toggle-sidebar {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .content-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            #prompt-container {
+                left: 0;
+            }
+
+            #toggle-sidebar {
+                display: flex;
+            }
+        }
+
+        @media (max-width: 576px) {
+            :root {
+                --prompt-height: 120px;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            .form-control {
+                padding: 0.5rem;
+            }
+        }
+
+        #model-selection-card .card-body {
+            padding: 1rem;
+        }
+
+        #model-selection {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        #image-input-container {
+            margin-bottom: 1rem;
+        }
+
+        #context-toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        #context-toggle-label {
+            margin-right: 1rem;
+        }
+
+        #image-preview {
+            max-width: 100%;
+            max-height: 100px;
+            margin-top: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            display: none; 
+        }
+
+        #prompt-container {
+            height: auto;
+            min-height: var(--prompt-height);
+            max-height: calc(var(--prompt-height) + 110px);
+        }
+        
+        #query-form {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .prompt-row {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 2px;
+        }
+        
+        .prompt-column {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <button id="toggle-sidebar" class="btn">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="app-header">
+                <i class="bi bi-files"></i>
+                <h1>File Explorer</h1>
+            </div>
+
+            <div class="directory-path">
+                <i class="bi bi-folder2-open"></i>
+                <span id="current-directory" title="Current directory path">Loading...</span>
+            </div>
+
+            <div class="card" id="model-selection-card">
+                <div class="card-header">
+                    <i class="bi bi-gear"></i> Model Selection
+                </div>
+                <div class="card-body">
+                    <label for="model-selection" class="form-label">Select Gemini Model:</label>
+                    <select class="form-select" id="model-selection">
+                        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+                        <option value="gemini-2.0-pro-exp-02-05">gemini-2.0-pro-exp-02-05</option>
+                        <option value="gemini-2.0-flash-thinking-exp-01-21">gemini-2.0-flash-thinking-exp-01-21</option>
+                        <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+                        <option value="gemini-embedding-exp-03-07">gemini-embedding-exp-03-07</option>
+                        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                        <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b</option>
+                    </select>
+
+                    <div id="image-input-container">
+                        <label for="image-input" class="form-label">Image Input:</label>
+                        <input type="file" class="form-control" id="image-input" accept="image/*">
+                    </div>
+
+                    <div id="context-toggle-container">
+                        <label class="form-check-label" for="context-toggle" id="context-toggle-label">Use Scanned Directory as Context:</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="context-toggle" checked>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-search"></i> Scan Directory
+                </div>
+                <div class="card-body">
+                    <form id="directory-form">
+                        <div class="mb-3">
+                            <label for="directory" class="form-label">Directory path</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="directory" name="directory">
+                                <button class="btn btn-outline-light" type="button" id="use-current-dir">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ignore-dirs" class="form-label">Directories to ignore</label>
+                            <input type="text" class="form-control" id="ignore-dirs" name="ignore_dirs"
+                                value="node_modules,__pycache__,venv,.git,.idea,.vscode,dist,build,target,bin,obj,.next,.cache,.npm,vendor">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Scan Directory
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div><i class="bi bi-file-earmark-text"></i> Files</div>
+                    <span id="file-count" class="badge">0</span>
+                </div>
+                <div class="card-body p-2">
+                    <div class="file-list" id="file-list">
+                        <p class="text-muted text-center p-3">No files scanned yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="content">
+                <div id="response-container">
+                    <div class="empty-state">
+                        <i class="bi bi-arrow-down-circle"></i>
+                        <h4>Enter a prompt below to analyze files</h4>
+                        <p>Scan your directory first, then use the prompt box below to analyze the content</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="prompt-container">
+                <div class="container-fluid">
+                    <form id="query-form">
+                        <div class="d-flex gap-2">
+                            <div class="flex-grow-1">
+                                <textarea class="form-control" id="prompt" rows="2"
+                                    placeholder="Ask a question about the code in these files..."></textarea>
+                                <input type="hidden" id="pasted-image-data" name="pasted_image_data">
+                                <img id="image-preview" src="" alt="Pasted Image Preview">
+                            </div>
+                            <div class="d-flex align-items-end">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-send"></i> Send
+                                </button>
+                            </div>
+                        </div>
+                        <div class="loading mt-3" id="loading">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Processing...</span>
+                            </div>
+                            <p class="mt-2">Processing request...</p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            const currentDirectorySpan = document.getElementById('current-directory');
+            const directoryInput = document.getElementById('directory');
+            const useCurrentDirButton = document.getElementById('use-current-dir');
+            const directoryForm = document.getElementById('directory-form');
+            const fileListDiv = document.getElementById('file-list');
+            const fileCountSpan = document.getElementById('file-count');
+            const queryForm = document.getElementById('query-form');
+            const promptTextarea = document.getElementById('prompt');
+            const loadingDiv = document.getElementById('loading');
+            const responseContainer = document.getElementById('response-container');
+            const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+            const sidebar = document.querySelector('.sidebar');
+            const contentDiv = document.querySelector('.content');
+
+            const modelSelection = document.getElementById('model-selection');
+            const imageInput = document.getElementById('image-input');
+            const contextToggle = document.getElementById('context-toggle');
+            const pastedImageDataInput = document.getElementById('pasted-image-data');  
+            const imagePreview = document.getElementById('image-preview');
+
+
+            async function scanDirectory(directory, ignoreDirs) {
+                try {
+                    const response = await fetch('/scan-directory', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            directory: directory,
+                            ignore_dirs: ignoreDirs
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.status === 'success') {
+                        updateFileList(data.files);
+                    } else {
+                        showAlert('Error: ' + data.message, 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showAlert('An error occurred during directory scanning', 'danger');
+                }
+            }
+
+            function updateFileList(files) {
+                fileListDiv.innerHTML = '';
+                fileCountSpan.textContent = files.length;
+
+                if (files.length === 0) {
+                    fileListDiv.innerHTML = '<p class="text-muted text-center p-3">No files found in directory.</p>';
+                    return;
+                }
+
+                files.sort((a, b) => a.path.localeCompare(b.path));
+
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.title = file.path;
+
+                    const fileName = document.createElement('div');
+                    fileName.className = 'file-name';
+
+                    const pathParts = file.path.split('/');
+                    const displayName = pathParts[pathParts.length - 1];
+
+                    fileName.innerHTML = `<i class="bi bi-file-earmark-text"></i> ${displayName}`;
+
+                    const fileSize = document.createElement('div');
+                    fileSize.className = 'file-size text-muted small';
+                    fileSize.textContent = `${file.size.toLocaleString()} chars`;
+
+                    fileItem.appendChild(fileName);
+                    fileItem.appendChild(fileSize);
+                    fileListDiv.appendChild(fileItem);
+                });
+            }
+
+            function showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+
+                responseContainer.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    alertDiv.classList.remove('show');
+                    setTimeout(() => alertDiv.remove(), 150);
+                }, 5000);
+
+                alertDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            async function queryGemini(prompt, model, image, useFileContext, pastedImageData) {
+                loadingDiv.style.display = 'block';
+
+                if (responseContainer.querySelector('.empty-state')) {
+                    responseContainer.innerHTML = '';
+                }
+
+                const formData = new FormData();
+                formData.append('prompt', prompt);
+                formData.append('model', model);
+                formData.append('use_file_context', useFileContext);
+
+                if (image) {
+                    formData.append('image', image);
+                }
+                if (pastedImageData) {
+                    formData.append('pasted_image_data', pastedImageData); 
+                }
+
+                try {
+                    const response = await fetch('/query', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    const data = await response.json();
+
+                    loadingDiv.style.display = 'none';
+
+                    if (data.status === 'success') {
+                    const formattedResponse = marked.parse(data.response);
+                    const responsePanel = document.createElement('div');
+                    responsePanel.className = 'response-panel';
+                    responsePanel.innerHTML = `
+                        <h4><i class="bi bi-robot"></i> Response</h4>
+                        <div class="mt-3 mb-2 response-content">${formattedResponse}</div>
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                            <div class="text-muted small">Generated at ${new Date().toLocaleTimeString()}</div>
+                        </div>
+                    `;
+
+                    responseContainer.appendChild(responsePanel);
+
+                    if (window.innerWidth <= 992) {
+                        sidebar.classList.remove('show');
+                    }
+
+                    document.querySelectorAll('pre code').forEach(block => {
+                        const wrapper = document.createElement('div');
+                        wrapper.classList.add('code-wrapper');
+                        block.parentNode.insertBefore(wrapper, block);
+                        wrapper.appendChild(block);
+                        wrapper.style.position = 'relative';
+
+                        const copyButton = document.createElement('button');
+                        copyButton.textContent = 'Copy';
+                        copyButton.className = 'copy-button';
+                        wrapper.appendChild(copyButton);
+
+                        copyButton.addEventListener('click', async () => {
+                            try {
+                                await navigator.clipboard.writeText(block.innerText);
+                                copyButton.textContent = 'Copied!';
+                                setTimeout(() => copyButton.textContent = 'Copy', 2000);
+                            } catch (err) {
+                                console.error('Failed to copy text: ', err);
+                                copyButton.textContent = 'Error';
+                            }
+                        });
+                    });
+
+                    document.querySelectorAll('pre code').forEach(el => {
+                        hljs.highlightElement(el);
+                    });
+
+                    promptTextarea.value = '';
+
+                    imagePreview.src = '';
+                    imagePreview.style.display = 'none';
+                    pastedImageDataInput.value = '';
+
+
+                    responsePanel.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showAlert(`Error: ${data.message}`, 'danger');
+                }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    loadingDiv.style.display = 'none';
+                    showAlert(`Error communicating with the server: ${error.message}`, 'danger');
+                }
+            }
+
+            useCurrentDirButton.addEventListener('click', async function () {
+                const response = await fetch('/get-current-directory');
+                const data = await response.json();
+                directoryInput.value = data.directory;
+            });
+
+            directoryForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const directory = directoryInput.value;
+                const ignoreDirs = document.getElementById('ignore-dirs').value;
+
+                if (!directory.trim()) {
+                    showAlert('Please enter a directory path', 'warning');
+                    return;
+                }
+
+                await scanDirectory(directory, ignoreDirs);
+            });
+
+            queryForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const prompt = promptTextarea.value;
+                const model = modelSelection.value;
+                const imageFile = imageInput.files[0];
+                const useFileContext = contextToggle.checked;
+                const pastedImageData = pastedImageDataInput.value; 
+
+                if (!prompt.trim()) {
+                    showAlert('Please enter a prompt', 'warning');
+                    return;
+                }
+
+                await queryGemini(prompt, model, imageFile, useFileContext, pastedImageData);
+            });
+
+            toggleSidebarBtn.addEventListener('click', function () {
+                sidebar.classList.toggle('show');
+            });
+
+            contentDiv.addEventListener('click', function () {
+                if (window.innerWidth <= 992 && sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                }
+            });
+
+            promptTextarea.addEventListener('paste', (event) => {
+                const items = (event.clipboardData || window.clipboardData).items;
+                for (const item of items) {
+                    if (item.type.indexOf('image') === 0) {
+                        const blob = item.getAsFile();
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            pastedImageDataInput.value = event.target.result; 
+                            imagePreview.src = event.target.result;         
+                            imagePreview.style.display = 'block';          
+                            imageInput.value = ''; 
+                        };
+                        reader.readAsDataURL(blob);
+                        
+                        event.preventDefault();
+                        return; 
+                    }
+                }
+            });
+
+            imageInput.addEventListener('change', () => {
+                if (imageInput.files && imageInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                        pastedImageDataInput.value = ''; 
+                    }
+                    reader.readAsDataURL(imageInput.files[0]);
+                } else {
+                    imagePreview.style.display = 'none'; 
+                }
+            });
+
+
+            try {
+                const dirResponse = await fetch('/get-current-directory');
+                const dirData = await dirResponse.json();
+                currentDirectorySpan.textContent = dirData.directory;
+                directoryInput.value = dirData.directory;
+
+                await scanDirectory(dirData.directory, document.getElementById('ignore-dirs').value);
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                showAlert('Failed to initialize.  Please check server connection.', 'danger');
+            }
+        });
+    </script>
+</body>
+
+</html>
