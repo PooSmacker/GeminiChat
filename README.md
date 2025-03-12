@@ -20,44 +20,24 @@ This web application allows you to leverage the power of Google's Gemini models 
     ```bash
     pip install -r requirements.txt
     ```
-    *(Ensure you have a `requirements.txt` file in the project directory with the following content or similar):*
-    ```
-    fastapi
-    uvicorn
-    google-generativeai
-    python-dotenv
-    Pillow
-    jinja2
-    requests
-    ```
 
 4.  **Set up Gemini API Key:**
     You need a Google Gemini API key to use this application. You can obtain one from [Google AI Studio](https://makersuite.google.com/app/apikey).
 
-    There are two ways to provide your API key:
-
-    *   **Environment Variable:** Set an environment variable named `GEMINI_API_KEY` with your API key.
-        ```bash
-        export GEMINI_API_KEY="YOUR_API_KEY_HERE"
-        ```
-        *(Replace `YOUR_API_KEY_HERE` with your actual API key)*
-
-    *   **`.gemini_api_key` File:** Create a file named `.gemini_api_key` in the project's root directory and paste your API key into it.
+    To setup your gemini api key:
+        *   **First Run** Simply enter your api key in the info box when first visting the page, it will then create a .gemini_api_key file containing your key.
 
 ## Running the Application
 
 1.  **Navigate to the project directory** in your terminal.
 
-2.  **Run the application using uvicorn:**
+2.  **Run the application**
     ```bash
     python main.py
     ```
-    or
-    ```bash
-    python -m main
-    ```
 
-    You can also specify the directory to scan and the port using command-line arguments:
+
+    **You can also specify the default directory to scan (can be changed on web) and the port (default is 8000) using command-line arguments:**
     ```bash
     python main.py --directory /path/to/your/code --port 8080
     ```
